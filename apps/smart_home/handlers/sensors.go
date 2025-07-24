@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"smarthome/db"
-	"smarthome/models"
-	"smarthome/services"
-
 	"github.com/gin-gonic/gin"
+
+	"github.com/icecream78/architecture-warmhouse/apps/smart_home/db"
+	"github.com/icecream78/architecture-warmhouse/apps/smart_home/models"
+	"github.com/icecream78/architecture-warmhouse/apps/smart_home/services"
 )
 
 // SensorHandler handles sensor-related requests
