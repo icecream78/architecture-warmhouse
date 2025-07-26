@@ -28,6 +28,10 @@ func New(connString string) (*Repository, error) {
 	return &Repository{Pool: pool}, nil
 }
 
+func (r *Repository) Ping(ctx context.Context) error {
+	return r.Pool.Ping(ctx)
+}
+
 // Close closes the database connection
 func (r *Repository) Close() {
 	if r.Pool != nil {

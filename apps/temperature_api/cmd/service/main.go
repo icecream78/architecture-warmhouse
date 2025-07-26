@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/labstack/echo/v4"
@@ -56,6 +57,25 @@ func run() exitCode {
 	}
 
 	e := echo.New()
+
+	e.GET("/health", func(c echo.Context) error {
+		ctx := c.Request().Context()
+
+		status := "ok"
+		isPgAvailable := sensorRepository.Ping(ctx) == nil
+		if !isPgAvailable {
+			status = "failure"
+		}
+
+		c.JSON(http.StatusOK, map[string]any{
+			"status": status,
+			"resources": map[string]any{
+				"postgres": isPgAvailable,
+			},
+		})
+
+		return nil
+	})
 
 	if err := handler.RegisterRouteHandlers(sensorService, e); err != nil {
 		slog.Error("during register http handlers", slog.String("error", err.Error()))
