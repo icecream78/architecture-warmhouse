@@ -1,13 +1,43 @@
 version: '3.8'
 
 services:
+  # TODO: перейти на отдельный контейнер с pressly/goose для цельной накатки миграций
   postgres:
     image: postgres:16-alpine
     container_name: smarthome-postgres
-  ## тут нужно добавить настройки
+    environment:
+      POSTGRES_DB: smarthome
+      POSTGRES_USER: smarthome_user
+      POSTGRES_PASSWORD: smarthome_password
+    ports:
+      - "54321:5432"
+    volumes:
+      - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - postgres_data3:/var/lib/postgresql/data
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smarthome_user -d smarthome"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   temperature-api:
-  ## тут нужно добавить приложение
+    build:
+      context: ./temperature_api
+      dockerfile: Dockerfile
+    container_name: temperature_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://smarthome_user:smarthome_password@postgres:5432/smarthome?sslmode=disable
+      - LISTEN_ADDRESS=:8081
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
 
   app:
     build:
@@ -20,7 +50,7 @@ services:
       temperature-api:
         condition: service_started
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
+      - DATABASE_URL=postgres://smarthome_user:smarthome_password@postgres:5432/smarthome?sslmode=disable
       - TEMPERATURE_API_URL=http://temperature-api:8081
     ports:
       - "8080:8080"
@@ -29,7 +59,8 @@ services:
       - smarthome-network
 
 volumes:
-  postgres_data:
+  # TODO: избавиться от костыля и сделать просто postgres_data
+  postgres_data3:
 
 networks:
   smarthome-network:
