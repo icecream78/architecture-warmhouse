@@ -3,8 +3,9 @@ package config
 import "os"
 
 type Config struct {
-	HttpServer HttpServer
-	Database   Database
+	Environment string
+	HttpServer  HttpServer
+	Database    Database
 }
 
 type HttpServer struct {
@@ -16,7 +17,12 @@ type Database struct {
 }
 
 func Get() (*Config, error) {
-	httpListenURL := "http://0.0.0.0:8080"
+	environment := "production"
+	if url := os.Getenv("ENV"); url != "" {
+		environment = url
+	}
+
+	httpListenURL := "0.0.0.0:8081"
 	if url := os.Getenv("LISTEN_ADDRESS"); url != "" {
 		httpListenURL = url
 	}
@@ -27,6 +33,7 @@ func Get() (*Config, error) {
 	}
 
 	return &Config{
+		Environment: environment,
 		HttpServer: HttpServer{
 			URL: httpListenURL,
 		},

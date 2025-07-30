@@ -1,9 +1,4 @@
 -- Create the database if it doesn't exist
-SELECT 'CREATE DATABASE smarthome'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'smarthome')\gexec
-
--- Connect to the database
-\c smarthome;
 
 -- Create the sensors table
 CREATE TABLE IF NOT EXISTS sensors (

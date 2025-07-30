@@ -1,16 +1,14 @@
 package main
 
 import (
-	"context"
 	"log/slog"
-	"net/http"
 	"os"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/client/sensor"
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/handler"
-	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/model"
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/pkg/config"
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/repository"
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/service"
@@ -25,10 +23,6 @@ const (
 
 func main() {
 	os.Exit(int(run()))
-}
-
-type sensorService interface {
-	GetTemperatureByLocation(ctx context.Context, location model.Location) (service.TemperatureByLocation, error)
 }
 
 func run() exitCode {
@@ -58,26 +52,11 @@ func run() exitCode {
 
 	e := echo.New()
 
-	e.GET("/health", func(c echo.Context) error {
-		ctx := c.Request().Context()
+	if appConfig.Environment != "production" {
+		e.Use(middleware.Logger())
+	}
 
-		status := "ok"
-		isPgAvailable := sensorRepository.Ping(ctx) == nil
-		if !isPgAvailable {
-			status = "failure"
-		}
-
-		c.JSON(http.StatusOK, map[string]any{
-			"status": status,
-			"resources": map[string]any{
-				"postgres": isPgAvailable,
-			},
-		})
-
-		return nil
-	})
-
-	if err := handler.RegisterRouteHandlers(sensorService, e); err != nil {
+	if err = handler.RegisterRouteHandlers(sensorService, sensorRepository, e); err != nil {
 		slog.Error("during register http handlers", slog.String("error", err.Error()))
 		return errorExitCode
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/icecream78/architecture-warmhouse/apps/temperature_api/model"
 )
 
-type TemperatureByLocation struct {
+type TemperatureDataBySensor struct {
 	RealtimeData  RealtimeDataForTemperatureByLocation
 	SensorDetails SensorDetailsForTemperatureByLocation
 }
