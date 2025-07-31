@@ -1,0 +1,318 @@
+openapi: 3.0.3
+info:
+  title: Devices API
+  version: 1.0.0
+  description: API для работы с устройствами в доме
+
+servers:
+  - url: http://localhost:8080
+    description: Сервер по умолчанию
+
+paths:
+  /houses/{id}/devices:
+    get:
+      summary: Получение списка зарегистрированных устройств в доме
+      description: Возвращает список устройств, зарегистрированных в указанном доме
+      operationId: getHouseDevices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор дома
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          description: Фильтр по статусу устройств
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          description: Лимит количества возвращаемых устройств
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 100
+        - name: cursor
+          in: query
+          required: false
+          description: Курсор для пагинации
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешное получение списка устройств
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+              examples:
+                success:
+                  summary: Пример успешного ответа
+                  value:
+                    devices:
+                      - id: 123
+                        name: "Датчик температуры кухня"
+                        description: "Датчик температуры в кухне"
+                        type: "temperature"
+                        serialNumber: "SN-123456789"
+                        status: "active"
+                        location: "кухня"
+                        scripts:
+                          - id: "script_001"
+                            description: "Включение постепенного обогрева кухни"
+                            status: "active"
+                            executeArgs:
+                              - targetTemperature: "30"
+                              - targetTemperatureUnit: "celsius"
+                              - notificationAfterFinish: true
+                              - notificationType: push
+                      - id: 124
+                        name: "Датчик света гостинная"
+                        description: "Датчик света в гостинной"
+                        type: "temperature"
+                        serialNumber: "SN-987654321"
+                        status: "disabled"
+                        location: "гостинная"
+                        scripts:
+                          - id: "script_002"
+                            description: "Утреннее диммирование по расписанию"
+                            status: "inactive"
+                            executeArgs:
+                              - dimmTimeFrom: "07:00"
+                              - dimmTimeTo: "09:00"
+                              - dimmValue: 30
+                          - id: "script_003"
+                            description: "Вечернее диммирование по расписанию"
+                            status: "inactive"
+                            executeArgs:
+                              - dimmTimeFrom: "20:00"
+                              - dimmTimeTo: "23:00"
+                              - dimmValue: 40
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                bad_request:
+                  summary: Пример ошибки некорректного запроса
+                  value:
+                    status: "bad-request"
+                    message: "Параметр limit должен быть положительным числом"
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  summary: Пример ошибки авторизации
+                  value:
+                    status: "unauth"
+                    message: "Требуется авторизация"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal_error:
+                  summary: Пример внутренней ошибки сервера
+                  value:
+                    status: "internal error"
+                    message: "Произошла внутренняя ошибка сервера"
+
+  /devices/{device_id}/scripts/{script_id}/execute:
+    post:
+      summary: Выполнение скрипта устройства
+      description: Запускает выполнение указанного скрипта для заданного устройства
+      operationId: executeDeviceScript
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          description: Идентификатор устройства
+          schema:
+            type: integer
+            format: int64
+        - name: script_id
+          in: path
+          required: true
+          description: Идентификатор скрипта
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executeArgs:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties:
+                      type: string
+              required:
+                - executeArgs
+            examples:
+              execute_request:
+                summary: Пример запроса на выполнение скрипта
+                value:
+                  executeArgs:
+                    - command: "turn_on"
+                      duration: "30"
+                    - target: "light_group_1"
+      responses:
+        '200':
+          description: Успешное выполнение скрипта
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                      - in-queue
+                      - processing
+                      - failed
+                  result:
+                    type: object
+                    additionalProperties:
+                      type: string
+              examples:
+                success_ok:
+                  summary: Скрипт выполнен успешно
+                  value:
+                    status: "ok"
+                    result:
+                      output: "Device turned on successfully"
+                      timestamp: "2023-12-07T10:30:00Z"
+                success_queue:
+                  summary: Скрипт поставлен в очередь
+                  value:
+                    status: "in-queue"
+                    result:
+                      queue_position: "3"
+                      estimated_time: "15s"
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                bad_request:
+                  summary: Пример ошибки некорректного запроса
+                  value:
+                    status: "bad-request"
+                    message: "Некорректные аргументы выполнения скрипта"
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  summary: Пример ошибки авторизации
+                  value:
+                    status: "unauth"
+                    message: "Требуется авторизация"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal_error:
+                  summary: Пример внутренней ошибки сервера
+                  value:
+                    status: "internal error"
+                    message: "Ошибка при выполнении скрипта"
+
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - temperature
+        serialNumber:
+          type: string
+        status:
+          type: string
+        location:
+          type: string
+        scripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Script'
+      required:
+        - id
+        - name
+        - description
+        - type
+        - serialNumber
+        - status
+        - location
+        - scripts
+
+    Script:
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        executeArgs:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+      required:
+        - id
+        - description
+        - status
+        - executeArgs
+
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+        - message

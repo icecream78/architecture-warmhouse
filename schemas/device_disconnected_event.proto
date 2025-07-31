@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package events;
+
+message DeviceDisconnected {
+  // Идентификатор устройства
+  string device_id = 1;
+
+  // Временная метка события в формате Unix timestamp
+  int64 timestamp = 2;
+}

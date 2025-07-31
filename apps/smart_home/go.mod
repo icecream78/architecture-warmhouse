@@ -1,4 +1,4 @@
-module smarthome
+module github.com/icecream78/architecture-warmhouse/apps/smart_home
 
 go 1.22
 

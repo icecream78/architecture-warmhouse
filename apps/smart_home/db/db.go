@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"smarthome/models"
-
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/icecream78/architecture-warmhouse/apps/smart_home/models"
 )
 
 // DB represents the database connection
