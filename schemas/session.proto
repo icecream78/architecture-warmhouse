@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package sessions;
+
+// Сервис сессий
+service SessionService {
+  // Получение информации о сессии
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+}
+
+// Запрос на получение сессии
+message GetSessionRequest {
+  // Идентификатор сессии (обязательный)
+  int64 session_id = 1;
+}
+
+// Ответ с информацией о сессии
+message GetSessionResponse {
+  // Идентификатор сессии
+  string session_id = 1;
+
+  // Мета-информация о сессии
+  SessionMeta meta = 2;
+
+  // Публичная информация о пользователе
+  PublicUserInfo public = 3;
+
+  // Токен обновления
+  string refresh_token = 4;
+
+  // Идентификатор пользователя
+  int64 user_id = 5;
+
+  // Роли пользователя
+  repeated string roles = 6;
+}
+
+// Мета-информация о сессии
+message SessionMeta {
+  // Платформа (android, ios, web)
+  Platform platform = 1;
+
+  // Идентификатор устройства
+  string device_id = 2;
+
+  // Время создания сессии
+  string create_time = 3;
+
+  // Время истечения сессии
+  string expire_time = 4;
+}
+
+// Публичная информация о пользователе
+message PublicUserInfo {
+  // Имя пользователя
+  string fname = 1;
+
+  // Фамилия пользователя
+  string lname = 2;
+
+  // Аватар пользователя
+  string avatar = 3;
+}
+
+// Перечисление доступных платформ
+enum Platform {
+  // Не указано
+  PLATFORM_UNSPECIFIED = 0;
+
+  // Android платформа
+  PLATFORM_ANDROID = 1;
+
+  // iOS платформа
+  PLATFORM_IOS = 2;
+
+  // Web платформа
+  PLATFORM_WEB = 3;
+}
+
+// Общий формат ошибки
+message Error {
+  // Статус ошибки
+  string status = 1;
+
+  // Сообщение об ошибке
+  string message = 2;
+}
+
+// Возможные ошибки
+message GetSessionError {
+  oneof error {
+    // Ошибка авторизации
+    Error unauth = 1;
+
+    // Ошибка некорректного запроса
+    Error bad_request = 2;
+
+    // Внутренняя ошибка сервера
+    Error internal_error = 3;
+  }
+}
